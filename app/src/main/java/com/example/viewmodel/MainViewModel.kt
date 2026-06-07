@@ -1,6 +1,7 @@
 ﻿package com.example.viewmodel
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.Room
@@ -16,6 +17,24 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val prefs = application.getSharedPreferences("campus_ai_prefs", Context.MODE_PRIVATE)
+    
+    // API key management
+    val apiKeyState = MutableStateFlow(prefs.getString("deepseek_api_key", "") ?: "")
+    
+    init {
+        val savedKey = apiKeyState.value
+        if (savedKey.isNotEmpty()) {
+            com.example.ai.RetrofitClient.apiKey = savedKey
+        }
+    }
+    
+    fun saveApiKey(key: String) {
+        prefs.edit().putString("deepseek_api_key", key).apply()
+        apiKeyState.value = key
+        com.example.ai.RetrofitClient.apiKey = key
+    }
 
     private val db = Room.databaseBuilder(
         application.applicationContext,
