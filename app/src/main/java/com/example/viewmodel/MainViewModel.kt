@@ -1,10 +1,10 @@
-package com.example.viewmodel
+﻿package com.example.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.Room
-import com.example.ai.GeminiService
+import com.example.ai.DeepSeekService
 import com.example.data.AppDatabase
 import com.example.data.AppRepository
 import com.example.data.GoodItem
@@ -77,7 +77,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             
             val promptText = "Summary:\n$stats\n\nRecent Details:\n$details"
             
-            val result = GeminiService.generateAnalysis(promptText)
+            val result = DeepSeekService.generateAnalysis(promptText)
             aiAnalysisState.value = result
         }
     }
