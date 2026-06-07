@@ -19,7 +19,7 @@
 | UI | Jetpack Compose + Material 3 |
 | 导航 | Navigation Compose |
 | 数据库 | Room (SQLite) |
-| AI | Google Gemini API (Retrofit + Kotlin Serialization) |
+| AI | DeepSeek API（OpenAI 兼容，Retrofit + Kotlin Serialization） |
 | 构建 | Gradle Kotlin DSL + Version Catalog |
 | 测试 | Roborazzi (截图) + Robolectric + JUnit |
 | 密钥 | Secrets Gradle Plugin (`.env`) |
@@ -59,7 +59,7 @@ app/
 - Android Studio（最新稳定版）
 - JDK 17+
 - Android SDK 36
-- Gemini API 密钥（从 [Google AI Studio](https://aistudio.google.com/apikey) 获取）
+- DeepSeek API 密钥（从 [DeepSeek Platform](https://platform.deepseek.com/api_keys) 获取）
 
 ### 运行步骤
 
