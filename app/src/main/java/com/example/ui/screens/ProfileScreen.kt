@@ -9,6 +9,9 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.viewmodel.MainViewModel
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 fun ProfileScreen(viewModel: MainViewModel) {
     val records by viewModel.allTimeRecords.collectAsStateWithLifecycle()
     val totalTime = records.sumOf { it.durationMinutes }
@@ -158,11 +162,61 @@ fun ProfileScreen(viewModel: MainViewModel) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("AI 个人兴趣标签", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Chip("Java编程")
-                    Chip("篮球运动")
-                    Chip("前沿科技")
+                
+                val tagStr by viewModel.interestTags.collectAsStateWithLifecycle()
+                val tagList = tagStr.split(",").filter { it.isNotBlank() }
+                
+                var newTag by remember { mutableStateOf("") }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = newTag,
+                        onValueChange = { newTag = it; if (it.contains(",")) { viewModel.addInterestTag(it.replace(",", "").trim()); newTag = "" } },
+                        label = { Text("添加兴趣标签") },
+                        placeholder = { Text("如：跑步") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Button(
+                        onClick = { 
+                            viewModel.addInterestTag(newTag.trim())
+                            newTag = "" 
+                        },
+                        enabled = newTag.isNotBlank()
+                    ) {
+                        Text("添加")
+                    }
                 }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                if (tagList.isEmpty()) {
+                    Text(
+                        "还没有兴趣标签，添加一个吧",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        tagList.forEach { tag ->
+                            InputChip(
+                                selected = false,
+                                onClick = { viewModel.removeInterestTag(tag) },
+                                label = { Text(tag, style = MaterialTheme.typography.labelMedium) },
+                                trailingIcon = {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = "删除 $tag",
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+                
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(onClick = { /* Find Match Demo */ }, modifier = Modifier.fillMaxWidth()) {
                     Text("寻找同频伙伴 / AI 同伴")

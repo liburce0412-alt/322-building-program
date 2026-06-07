@@ -35,6 +35,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         apiKeyState.value = key
         com.example.ai.RetrofitClient.apiKey = key
     }
+    
+    // Interest tags
+    val interestTags = MutableStateFlow(prefs.getString("interest_tags", "") ?: "")
+    
+    fun addInterestTag(tag: String) {
+        val trimmed = tag.trim()
+        if (trimmed.isEmpty()) return
+        val current = interestTags.value
+        val tags = if (current.isEmpty()) trimmed else "$current,$trimmed"
+        interestTags.value = tags
+        prefs.edit().putString("interest_tags", tags).apply()
+    }
+    
+    fun removeInterestTag(tag: String) {
+        val tags = interestTags.value.split(",").filter { it.isNotBlank() && it != tag }
+        val result = tags.joinToString(",")
+        interestTags.value = result
+        prefs.edit().putString("interest_tags", result).apply()
+    }
 
     private val db = Room.databaseBuilder(
         application.applicationContext,
