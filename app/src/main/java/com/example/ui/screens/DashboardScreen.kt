@@ -1,4 +1,4 @@
-package com.example.ui.screens
+﻿package com.example.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -255,7 +255,7 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.clickable { navController.navigate("profile") }
+                        modifier = Modifier.clickable { navController.navigate("profile") { popUpTo("dashboard") { saveState = true }; launchSingleTop = true; restoreState = true } }
                     )
                 }
 
