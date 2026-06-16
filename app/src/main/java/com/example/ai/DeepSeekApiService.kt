@@ -79,15 +79,20 @@ object DeepSeekService {
         val userPrompt = "以下是一名大学生的近期时间记录，请提供一份简短、鼓励性的成长分析报告和个性化建议。用纯文本返回，不要使用 Markdown 格式。\n记录内容：\n$recordsText"
 
         val request = ChatCompletionRequest(
+            model = "deepseek-chat",
             messages = listOf(
                 ChatMessage(role = "system", content = systemPrompt),
                 ChatMessage(role = "user", content = userPrompt)
-            )
+            ),
+            temperature = 0.7
         )
         try {
             val response = RetrofitClient.service.chatCompletion(request)
             response.choices.firstOrNull()?.message?.content
                 ?: "目前没有分析建议，继续记录您的时间吧！"
+        } catch (e: retrofit2.HttpException) {
+            val errorBody = e.response()?.errorBody()?.string()
+            "DeepSeek API 错误(${e.code()}): ${errorBody ?: e.localizedMessage}"
         } catch (e: Exception) {
             "分析数据时出错：${e.localizedMessage}。请重试。"
         }

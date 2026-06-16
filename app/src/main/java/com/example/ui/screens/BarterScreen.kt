@@ -1,4 +1,4 @@
-package com.example.ui.screens
+﻿package com.example.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -91,7 +91,7 @@ fun BarterScreen(viewModel: MainViewModel) {
     if (showDialog) {
         var title by remember { mutableStateOf("") }
         var description by remember { mutableStateOf("") }
-        var tags by remember { mutableStateOf("书籍") }
+        var tags by remember { mutableStateOf("") }
 
         AlertDialog(
             onDismissRequest = { showDialog = false },
@@ -111,7 +111,7 @@ fun BarterScreen(viewModel: MainViewModel) {
                     OutlinedTextField(
                         value = tags,
                         onValueChange = { tags = it },
-                        label = { Text("分类名称 (如：书籍, 数码, 运动用品)") }
+                        label = { Text("分类标签 (如：书籍, 数码, 运动用品)") }
                     )
                 }
             },
