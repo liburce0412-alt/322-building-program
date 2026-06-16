@@ -1,6 +1,7 @@
 ﻿package com.example
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -62,6 +63,11 @@ class MainActivity : ComponentActivity() {
                 updateInfo = result
                 showUpdateDialog = true
             }
+            Toast.makeText(
+                this@MainActivity,
+                if (result != null) "发现新版本 v${result.versionName}" else "暂无新版本",
+                Toast.LENGTH_SHORT
+            ).show()
         }
 
         setContent {
