@@ -1,6 +1,6 @@
 ﻿package com.example.ai
 
-import com.example.BuildConfig
+// API key loaded at runtime (set via MainViewModel/SharedPreferences)
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.Interceptor
@@ -44,6 +44,9 @@ interface DeepSeekApiService {
 }
 
 object RetrofitClient {
+    /** Dynamic API key - set at runtime via user input or fallback to BuildConfig */
+    var apiKey: String = ""
+
     private const val BASE_URL = "https://api.deepseek.com/"
 
     private val okHttpClient = OkHttpClient.Builder()
@@ -52,7 +55,7 @@ object RetrofitClient {
         .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
         .addInterceptor(Interceptor { chain ->
             val request = chain.request().newBuilder()
-                .addHeader("Authorization", "Bearer ${BuildConfig.DEEPSEEK_API_KEY}")
+                .addHeader("Authorization", "Bearer $apiKey")
                 .build()
             chain.proceed(request)
         })
