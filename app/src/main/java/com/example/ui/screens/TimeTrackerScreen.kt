@@ -46,7 +46,7 @@ fun TimeTrackerScreen(viewModel: MainViewModel) {
                 "柳比歇夫时间记录",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(modifier = Modifier.height(16.dp))
             

@@ -39,7 +39,7 @@ fun BarterScreen(viewModel: MainViewModel) {
                 "校园闲置与以物换物",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(modifier = Modifier.height(16.dp))
             

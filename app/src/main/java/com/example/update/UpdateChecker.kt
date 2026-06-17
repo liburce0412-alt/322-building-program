@@ -2,6 +2,7 @@
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import com.example.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -13,7 +14,7 @@ import java.util.concurrent.TimeUnit
 object UpdateChecker {
 
     private const val UPDATE_JSON_URL =
-        "https://raw.githubusercontent.com/liburce0412-alt/322-building-program/master/update.json"
+        "https://gitee.com/LEQ0906/campus-app-update/raw/master/update.json"
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -34,6 +35,7 @@ object UpdateChecker {
             context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val postponeUntil = prefs.getLong(KEY_POSTPONE_UNTIL, 0L)
         if (System.currentTimeMillis() < postponeUntil) {
+            Log.d("[UPDATE]", "Postponed until ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault()).format(java.util.Date(postponeUntil))}")
             return@withContext null
         }
 
@@ -44,23 +46,32 @@ object UpdateChecker {
 
         val response = client.newCall(request).execute()
         if (!response.isSuccessful) {
+            Log.w("[UPDATE]", "HTTP ${response.code} from update.json")
             return@withContext null
         }
 
         val body = response.body?.string() ?: return@withContext null
+        Log.d("[UPDATE]", "Raw response (first 200 chars): ${body.take(200)}")
 
         val updateInfo = try {
             json.decodeFromString<UpdateInfo>(body)
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("[UPDATE]", "JSON parse failed", e)
             return@withContext null
         }
 
         val currentVersionCode = BuildConfig.VERSION_CODE
+        val currentVersionName = BuildConfig.VERSION_NAME
+        Log.d("[VERSION]", "Local: $currentVersionName ($currentVersionCode)")
+        Log.d("[VERSION]", "Server: ${updateInfo.versionName} (${updateInfo.versionCode})")
+        Log.d("[VERSION]", "Server > Local? ${updateInfo.versionCode > currentVersionCode}")
+
         if (updateInfo.versionCode > currentVersionCode) {
+            Log.d("[UPDATE]", "Update available: ${updateInfo.versionName} (${updateInfo.versionCode})")
             return@withContext updateInfo
         }
 
+        Log.d("[UPDATE]", "No update needed (server=${updateInfo.versionCode} <= local=$currentVersionCode)")
         null
     }
 

@@ -28,7 +28,7 @@ fun AiAnalysisScreen(viewModel: MainViewModel) {
             "AI 成长与日程匹配分析",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(

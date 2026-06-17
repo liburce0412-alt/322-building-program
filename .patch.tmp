@@ -1,0 +1,16 @@
+﻿*** Begin Patch
+*** app/src/main/java/com/example/MainActivity.kt
+--- a/app/src/main/java/com/example/MainActivity.kt
++++ b/app/src/main/java/com/example/MainActivity.kt
+@@ -161,7 +161,10 @@
+                                     selected = currentDestination?.hierarchy?.any { it.route == route } == true,
+                                     onClick = {
+                                         navController.navigate(route) {
+-                                            popUpTo(navController.graph.findStartDestination().id) {
++                                            // When clicking 首页, pop everything inclusive to force a fresh navigation
++                                            // This fixes the bug where internal navigation from dashboard
++                                            // prevents returning to dashboard via bottom nav
++                                            popUpTo(navController.graph.startDestinationId) {
+                                                 saveState = true
+                                             }
+                                             launchSingleTop = true

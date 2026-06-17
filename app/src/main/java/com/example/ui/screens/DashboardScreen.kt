@@ -134,7 +134,7 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(24.dp))
-                .background(MaterialTheme.colorScheme.primaryContainer)
+                .background(MaterialTheme.colorScheme.tertiaryContainer)
                 .clickable { navController.navigate("analysis") }
                 .padding(16.dp)
         ) {
@@ -153,12 +153,12 @@ fun DashboardScreen(viewModel: MainViewModel, navController: NavController) {
                         "AI 匹配与习惯分析：推荐心流",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
                     )
                     Text(
                         if (aiState.startsWith("Tap") || aiState.contains("Tap")) "今晚您与 'Java/篮球' 学习小组的匹配度达 92%！点击可生成本周 AI 柳比歇夫成长报告。" else aiState,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f),
                         maxLines = 2
                     )
                 }
@@ -357,3 +357,4 @@ fun BadgeItem(emoji: String, title: String, tintColor: Color) {
         Text(title, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
     }
 }
+

@@ -1,7 +1,8 @@
 ﻿package com.example
 
+import android.content.Context
 import android.os.Bundle
-import android.widget.Toast
+import androidx.compose.ui.graphics.Color
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -24,6 +25,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.ui.screens.*
+import com.example.ui.screens.LoginScreen
 import com.example.ui.components.*
 import com.example.ui.theme.MyApplicationTheme
 import com.example.viewmodel.MainViewModel
@@ -31,8 +33,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import com.example.update.DownloadState
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
@@ -63,16 +66,59 @@ class MainActivity : ComponentActivity() {
                 updateInfo = result
                 showUpdateDialog = true
             }
-            Toast.makeText(
-                this@MainActivity,
-                if (result != null) "发现新版本 v${result.versionName}" else "暂无新版本",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
+}
+
+                val activity = this@MainActivity
 
         setContent {
             MyApplicationTheme {
-                val viewModel: MainViewModel = viewModel()
+                val authViewModel: MainViewModel = viewModel()
+                var isLoggedIn by remember { mutableStateOf(false) }
+                var authChecked by remember { mutableStateOf(false) }
+
+                LaunchedEffect(Unit) {
+                    // Restore saved token from SharedPreferences
+                    val prefs = activity.getSharedPreferences("campus_ai_prefs", Context.MODE_PRIVATE)
+                    val savedToken = prefs.getString("supabase_access_token", null)
+                    if (!savedToken.isNullOrBlank()) {
+                        com.example.supabase.initSession(savedToken)
+                    }
+
+                    val uid = com.example.supabase.SupabaseRepository.getCurrentUserId()
+                    if (uid != null) {
+                        authViewModel.currentUserId.value = uid
+                        authViewModel.currentSupabaseUserId.value = uid
+                        authViewModel.refreshProfile()
+                        authViewModel.loadFriends()
+                        isLoggedIn = true
+                    }
+                    authChecked = true
+                }
+
+                if (!authChecked) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                    return@MyApplicationTheme
+                }
+
+                if (!isLoggedIn) {
+                    LoginScreen(
+                        viewModel = authViewModel,
+                        onLoginSuccess = {
+                            // Save token after successful login
+                            val prefs = activity.getSharedPreferences("campus_ai_prefs", Context.MODE_PRIVATE)
+                            val token = com.example.supabase.getStoredToken()
+                            if (!token.isNullOrBlank()) {
+                                prefs.edit().putString("supabase_access_token", token).apply()
+                            }
+                            isLoggedIn = true
+                        }
+                    )
+                    return@MyApplicationTheme
+                }
+
+                val viewModel: MainViewModel = authViewModel
                 val navController = rememberNavController()
 
                 val items = listOf(
@@ -92,7 +138,9 @@ class MainActivity : ComponentActivity() {
                     else -> "LV.$level 时间管理新手"
                 }
 
-                val appVersion = "v1.4"
+                val appVersion = BuildConfig.VERSION_NAME
+
+                val downloadState by AppUpdateManager.downloadProgress.collectAsStateWithLifecycle()
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -142,9 +190,7 @@ class MainActivity : ComponentActivity() {
                                             .size(40.dp)
                                             .clip(CircleShape)
                                             .background(
-                                                Brush.linearGradient(
-                                                    colors = listOf(Color(0xFF6366F1), Color(0xFF9333EA))
-                                                )
+                                                MaterialTheme.colorScheme.primaryContainer
                                             ),
                                         contentAlignment = Alignment.Center
                                     ) {
@@ -227,6 +273,7 @@ class MainActivity : ComponentActivity() {
                     if (showUpdateDialog) {
                         UpdateDialog(
                             updateInfo = info,
+                            downloadState = downloadState,
                             onDismiss = {
                                 showUpdateDialog = false
                                 UpdateChecker.postpone(this@MainActivity)
@@ -235,7 +282,7 @@ class MainActivity : ComponentActivity() {
                                 showUpdateDialog = false
                                 AppUpdateManager.startDownload(
                                     this@MainActivity,
-                                    info.downloadUrl
+                                    info
                                 )
                             }
                         )
@@ -245,3 +292,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+
+
+
+
+
+
+

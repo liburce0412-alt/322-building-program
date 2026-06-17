@@ -14,11 +14,22 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import android.net.Uri
+import com.example.supabase.ChatMessage
+import com.example.supabase.Achievement
+import com.example.supabase.Friend
+import com.example.supabase.Message
+import com.example.supabase.UserAchievement
+import com.example.supabase.Profile
+import com.example.supabase.SupabaseRepository
+import java.io.ByteArrayOutputStream
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val prefs = application.getSharedPreferences("campus_ai_prefs", Context.MODE_PRIVATE)
+    private val supabase = SupabaseRepository
     
     // API key management
     val apiKeyState = MutableStateFlow(prefs.getString("deepseek_api_key", "") ?: "")
@@ -55,7 +66,171 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         prefs.edit().putString("interest_tags", result).apply()
     }
 
-    private val db = Room.databaseBuilder(
+    
+    // ==========================================
+    // Auth / Profile
+    // ==========================================
+
+    val currentUserId = MutableStateFlow("")
+    val currentSupabaseUserId = MutableStateFlow("")
+    val avatarUrl = MutableStateFlow<String?>(null)
+
+    init {
+        viewModelScope.launch {
+            val uid = supabase.getCurrentUserId()
+            if (!uid.isNullOrBlank()) {
+                currentUserId.value = uid
+                currentSupabaseUserId.value = uid
+                val profile = supabase.getProfile(uid)
+                avatarUrl.value = profile?.avatarUrl
+            }
+        }
+    }
+
+    fun refreshProfile() {
+        viewModelScope.launch {
+            val uid = currentUserId.value
+            if (uid.isBlank()) return@launch
+            val profile = supabase.getProfile(uid)
+            avatarUrl.value = profile?.avatarUrl
+        }
+    }
+
+    fun uploadAvatar(uri: android.net.Uri) {
+        viewModelScope.launch {
+            try {
+                val ctx = getApplication<android.app.Application>()
+                val input = ctx.contentResolver.openInputStream(uri) ?: return@launch
+                val baos = java.io.ByteArrayOutputStream()
+                input.copyTo(baos)
+                val bytes = baos.toByteArray()
+                val uid = currentUserId.value
+                if (uid.isBlank()) return@launch
+                val url = supabase.uploadAvatar(uid, bytes)
+                if (url != null) {
+                    supabase.updateAvatar(uid, url)
+                    avatarUrl.value = url
+                }
+            } catch (_: java.lang.Exception) { }
+        }
+    }
+
+    // ==========================================
+    // Friends
+    // ==========================================
+
+    val friends = MutableStateFlow<List<String>>(emptyList())
+    val pendingRequests = MutableStateFlow<List<Friend>>(emptyList())
+
+    fun loadFriends() {
+        viewModelScope.launch {
+            val uid = currentUserId.value
+            if (uid.isBlank()) return@launch
+            friends.value = supabase.getFriends(uid)
+            pendingRequests.value = supabase.getPendingRequests(uid)
+        }
+    }
+
+    fun searchUsers(query: String, callback: (List<Profile>) -> Unit) {
+        viewModelScope.launch {
+            callback(supabase.searchUsers(query))
+        }
+    }
+
+    fun sendFriendRequest(friendId: String) {
+        viewModelScope.launch {
+            supabase.sendFriendRequest(currentUserId.value, friendId)
+            loadFriends()
+        }
+    }
+
+    fun acceptFriendRequest(friendId: String) {
+        viewModelScope.launch {
+            supabase.acceptFriendRequest(currentUserId.value, friendId)
+            loadFriends()
+        }
+    }
+
+    fun startConversation(friendId: String, callback: (Long?, String) -> Unit) {
+        viewModelScope.launch {
+            val convId = supabase.getOrCreateConversation(currentUserId.value, friendId)
+            callback(convId, friendId)
+        }
+    }
+
+    // ==========================================
+    // Chat
+    // ==========================================
+
+    val chatMessages = MutableStateFlow<List<ChatMessage>>(emptyList())
+
+    fun loadChatMessages(conversationId: Long) {
+        viewModelScope.launch {
+            chatMessages.value = supabase.getChatMessages(conversationId)
+        }
+    }
+
+    fun sendChatMessage(conversationId: Long, text: String) {
+        viewModelScope.launch {
+            supabase.sendChatMessage(conversationId, currentUserId.value, text)
+            loadChatMessages(conversationId)
+        }
+    }
+
+
+    // ==========================================
+    // Achievements
+    // ==========================================
+
+    val achievements = MutableStateFlow<List<Achievement>>(emptyList())
+    val userAchievements = MutableStateFlow<List<UserAchievement>>(emptyList())
+
+    fun loadAchievements() {
+        viewModelScope.launch {
+            achievements.value = supabase.getAllAchievements()
+            val uid = currentUserId.value
+            if (uid.isNotBlank()) {
+                userAchievements.value = supabase.getUserAchievements(uid)
+            }
+        }
+    }
+
+    // ==========================================
+    // Admin / Moderation
+    // ==========================================
+
+    val pendingMessages = MutableStateFlow<List<Message>>(emptyList())
+    val pendingChatMessages = MutableStateFlow<List<ChatMessage>>(emptyList())
+
+    fun loadPendingMessages() {
+        viewModelScope.launch {
+            pendingMessages.value = supabase.getPendingMessages()
+        }
+    }
+
+    fun loadPendingChatMessages() {
+        viewModelScope.launch {
+            pendingChatMessages.value = supabase.getPendingChatMessages()
+        }
+    }
+
+    fun approveMessage(id: Long) {
+        viewModelScope.launch { supabase.approveMessage(id); loadPendingMessages() }
+    }
+
+    fun deleteMessage(id: Long) {
+        viewModelScope.launch { supabase.deleteMessage(id); loadPendingMessages() }
+    }
+
+    fun approveChatMessage(id: Long) {
+        viewModelScope.launch { supabase.approveChatMessage(id); loadPendingChatMessages() }
+    }
+
+    fun deleteChatMessage(id: Long) {
+        viewModelScope.launch { supabase.deleteChatMessage(id); loadPendingChatMessages() }
+    }
+
+private val db = Room.databaseBuilder(
         application.applicationContext,
         AppDatabase::class.java,
         "campus_ai_db"
